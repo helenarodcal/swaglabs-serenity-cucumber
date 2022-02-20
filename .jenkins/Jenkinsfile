@@ -1,0 +1,34 @@
+pipeline {
+	agent {
+		docker {
+		//this docker imaage does not have a browser. Find one with a browser installed
+		//or we can use selenium grid and run on remote (use serenity.remote.properties)
+			image 'maven:3.8.1-openjdk-8'
+// 			cache maven dependencies so runs do not take so long
+			args '-v $HOME/.m2:/root/.m2'
+		}
+	}
+
+	stages {
+		stage ('e2e') {
+			steps {
+				sh "mvn clean verify -Dproperties=serenity.remote.properties"
+			}
+
+			post {
+				always {
+// 					junit testResults: 'target/failsafe-reports/**/*.xml'
+
+					publishHTML(target: [
+										reportName : 'Serenity',
+										reportDir : 'target/site/serenity',
+										reportFiles : 'index.html',
+										keepAll : true,
+										alwaysLinkToLastBuild : true,
+										allowMissing : false
+					])
+				}
+			}
+		}
+	}
+}
